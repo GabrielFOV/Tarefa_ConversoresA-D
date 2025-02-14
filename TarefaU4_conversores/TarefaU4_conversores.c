@@ -18,11 +18,11 @@
 #define BAUD_RATE 115200 // Define a taxa de transmissão.
 #define UART_TX_PIN 0 // Pino GPIO usado para TX.
 #define UART_RX_PIN 1 // Pino GPIO usado para RX.
-#define LED1_PIN 11  
-#define LED2_PIN 13  
-#define LED3_PIN 12  
-#define VRX_PIN 26   
-#define VRY_PIN 27   
+#define LED1_PIN 11 // Led azul.
+#define LED2_PIN 13 // Led vermelho.
+#define LED3_PIN 12 // Led verde.
+#define VRX_PIN 27 
+#define VRY_PIN 26 
 #define SW_PIN 22 
 
 
@@ -67,7 +67,7 @@ void pwm_setup()//Função de inicialização para o PWM.
 }
 
 // Função para definir a luminosidade do led vermelho.
-void Controle_vermelho(uint16_t direcao) 
+void Controle_azul(uint16_t direcao) 
 {
     if(estado==true)//Reconhece o acinamento do botão A.
   {
@@ -80,7 +80,7 @@ void Controle_vermelho(uint16_t direcao)
 }
 
 // Função para definir a luminosidade do led azul.
-void Controle_azul(uint16_t direcao) 
+void Controle_vermelho(uint16_t direcao) 
 {
   if(estado==true)//Reconhece o acinamento do botão A.
   {
@@ -238,7 +238,6 @@ int main()
         }
         printf("VRX: %u, VRY: %u, SW: %d\n", vrx_value, vry_value, sw_value);//imprime valores do ADC.
         sleep_ms(100);
-   
   }
   
 }
@@ -247,7 +246,8 @@ int main()
 void gpio_irq_handlerA(uint gpio, uint32_t events) {
     current_time = to_us_since_boot(get_absolute_time()); // Obtém o tempo atual em microssegundos
 
-    if (gpio == button_A) { // Se a interrupção veio do botão A
+    if (gpio == button_A)// Se a interrupção veio do botão A
+    { 
         if (current_time - last_time_A > 200000) { // 200 ms de debouncing
             last_time_A = current_time; // Atualiza o tempo do último evento
 
@@ -267,7 +267,8 @@ void gpio_irq_handlerA(uint gpio, uint32_t events) {
             a++; // Incrementa contador de eventos
         }
     }
-    if (gpio == SW_PIN) { // Se a interrupção veio do botão SW
+    if (gpio == SW_PIN) // Se a interrupção veio do botão SW
+    { 
         if (current_time - last_time_SW > 200000) // 200 ms de debouncing
         { 
             last_time_SW = current_time; // Atualiza o tempo do último evento
