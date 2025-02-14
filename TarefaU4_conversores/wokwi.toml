@@ -1,0 +1,7 @@
+[wokwi]
+version = 1
+firmware = 'build/TarefaU4_conversores.uf2'
+elf = 'build/TarefaU4_conversores.elf'
+
+[[uart]]
+baud = 115200
