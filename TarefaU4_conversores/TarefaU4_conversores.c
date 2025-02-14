@@ -53,6 +53,9 @@ int grosso = 3;
 int fino = 1;
 int espessura = 1;
 bool est = true;
+static volatile uint32_t last_time_A = 0; 
+static volatile uint32_t last_time_SW = 0; 
+static volatile bool estado_led3 = false;
 
 //Prototipação da função de interrupção.
 static void gpio_irq_handlerA(uint gpio, uint32_t events);
@@ -105,19 +108,18 @@ void Controle_azul(uint16_t direcao)
   }
 }
 
-void Controle_verde( bool est) 
-{
-    if (est) //200 ms de debouncing.
+void Controle_verde(bool estado_led3) {
+    if(estado==true)
     {
-        
-        // Verifica se o botão está pressionado
-        if (gpio_get(SW_PIN) == false) { 
-            gpio_put(LED3_PIN, !gpio_get(LED3_PIN)); // Alterna o LED
+        if (estado_led3) {
+            gpio_put(LED3_PIN, true);  // Liga o LED
+        } else {
+            gpio_put(LED3_PIN, false); // Desliga o LED
         }
-    } else 
+    }
+    else
     {
-        // Se est for falso, desliga o LED e ignora o botão
-        gpio_put(LED3_PIN, false);
+        gpio_put(LED3_PIN, false); // Desliga o LED
     }
 }
 
@@ -260,35 +262,48 @@ int main()
 }
 
 //Função de interrupção com debouncing.
-void gpio_irq_handlerA(uint gpio, uint32_t events)
-{
-    // Obtém o tempo atual em microssegundos.
-    current_time = to_us_since_boot(get_absolute_time());
-    //Verifica se passou tempo suficiente desde o último evento.
-    //Diferencia o botão A do B.
-    if (gpio == button_A && (current_time - last_time > 200000)) //200 ms de debouncing.
-    {
-        last_time = current_time; //Atualiza o tempo do último evento.
-        printf("Mudanca de Estado dos Leds. A = %d\n", a);
-        //gpio_put(button_A, !gpio_get(button_A)); //Alterna o estado.
-        if(gpio_get(button_A)==false)//Reconhece o estado do led.
-        {
-          uart_puts(UART_ID, " led desativado\r\n");
+void gpio_irq_handlerA(uint gpio, uint32_t events) {
+    current_time = to_us_since_boot(get_absolute_time()); // Obtém o tempo atual em microssegundos
 
-          estado=false;
-        } else { uart_puts(UART_ID, " led ativado\r\n");
-          estado=true;
+    if (gpio == button_A) { // Se a interrupção veio do botão A
+        if (current_time - last_time_A > 200000) { // 200 ms de debouncing
+            last_time_A = current_time; // Atualiza o tempo do último evento
+
+            printf("Mudança de Estado dos LEDs. A = %d\n", a);
+
+            estado = !estado; // Alterna o estado do LED
+            //Controle_verde(estado); // Controla o LED Verde
+            
+            // Exibir estado via UART
+            if (estado) {
+                uart_puts(UART_ID, "LED ativado\r\n");
+            } else {
+                uart_puts(UART_ID, "LED desativado\r\n");
+                gpio_put(LED3_PIN, false);
+            }
+
+            a++; // Incrementa contador de eventos
         }
-        Controle_verde(estado);
-        a++;//Incrementa a variavel de verificação
     }
-     if (gpio == SW_PIN && (current_time - last_time > 200000)) //200 ms de debouncing.
-    {
-        last_time = current_time; //Atualiza o tempo do último evento.
-        printf("Mudanca de Estado dos Leds. A = %d\n", a);
-        Controle_verde(estado);
-        est=(!est);
-        espessura_borda(est);
-        a++;//Incrementa a variavel de verificação
+
+    current_time = to_us_since_boot(get_absolute_time()); // Obtém o tempo atual em microssegundos
+
+    if (gpio == SW_PIN) { // Se a interrupção veio do botão SW
+        if (current_time - last_time_SW > 200000) { // 200 ms de debouncing
+            last_time_SW = current_time; // Atualiza o tempo do último evento
+            
+            // Alterna o estado de espessura
+            est = !est;
+            espessura_borda(est);
+
+            // Alterna o estado do LED apenas se est == true
+            if (est) {
+                estado_led3 = !estado_led3; // Alterna manualmente o estado do LED
+            } else {
+                estado_led3 = false; // Mantém desligado se est for false
+            }
+
+            Controle_verde(estado_led3); // Aplica a mudança no LED
+        }
     }
 }
